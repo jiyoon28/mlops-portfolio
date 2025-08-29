@@ -1,7 +1,26 @@
 
-# Software Engineering for Data Scientists 
+# Employee Performance & Retention Risk Dashboard
 
-This repository contains starter code for the **Software Engineering for Data Scientists** final project. Please reference your course materials for documentation on this repository's structure and important files. Happy coding!
+## 📌 Project Overview
+The goal is to build a **data dashboard** for a manufacturing company’s managers to monitor employee performance and predict the likelihood of employees being recruited by competitors.  
+
+The project includes:  
+- A **Python package (`employee_events`)** that queries an SQLite database.  
+- A **FastHTML-based dashboard** that visualizes employee or team performance.  
+- A **machine learning model** integrated to predict employee recruitment risk.  
+- **Automated tests with pytest** and GitHub Actions for CI/CD.  
+
+---
+
+## 🚀 Features
+- 📊 **Interactive Dashboard** built with FastHTML  
+- 👨‍💼 **Employee / Team View** toggle  
+- 📝 **Notes Table**: Displays manager comments and observations  
+- 📈 **Line Chart**: Shows cumulative positive and negative events over time  
+- 📉 **Bar Chart**: Displays predicted recruitment risk using ML model  
+- 🔍 **SQL Query Layer**: Queries employee/team data directly from `employee_events.db`  
+
+---
 
 ### Repository Structure
 ```

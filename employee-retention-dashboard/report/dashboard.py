@@ -400,5 +400,7 @@ async def update_data(r):
         return RedirectResponse(f"/team/{id}", status_code=303)
     
 
-
-serve(reload=False)
+# Use PORT from environment variable for Render deployment
+import os
+port = int(os.environ.get("PORT", 5001))
+serve(reload=False, port=port, host="0.0.0.0")

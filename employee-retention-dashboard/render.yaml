@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: employee-retention-dashboard
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd report && python dashboard.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

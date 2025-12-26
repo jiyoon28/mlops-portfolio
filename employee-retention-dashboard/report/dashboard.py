@@ -102,6 +102,17 @@ class LineChart(MatplotlibViz):
         # Pass the `asset_id` argument tothe model's `event_counts` method to
         # receive the x (Day) and y (event count)
         df = model.event_counts(asset_id)
+        
+        # Check if data is empty
+        if df.empty:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.text(0.5, 0.5, 'No data available for this selection', 
+                   transform=ax.transAxes, ha='center', va='center', 
+                   fontsize=14, color='white')
+            ax.set_facecolor('#16213e')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            return fig
 
         # Use the pandas .fillna method to fill nulls with 0
         df = df.fillna(0)
@@ -193,27 +204,48 @@ class BarChart(MatplotlibViz):
         # learning model
         df = model.model_data(asset_id)
         
-        # Using the predictor class attribute
-        # pass the data to the `predict_proba` method
-        proba = self.predictor.predict_proba(df)
+        # Check if data is empty
+        if df.empty or df.isnull().all().all():
+            fig, ax = plt.subplots(figsize=(8, 2.5))
+            ax.text(0.5, 0.5, 'No data available for prediction', 
+                   transform=ax.transAxes, ha='center', va='center', 
+                   fontsize=14, color='white')
+            ax.set_facecolor('#16213e')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            return fig
         
-        # Index the second column of predict_proba output
-        # The shape should be (<number of records>, 1)
-        probs = proba[:, 1]
-        
-        
-        # Below, create a `pred` variable set to
-        # the number we want to visualize
-        #
-        # If the model's name attribute is "team"
-        # We want to visualize the mean of the predict_proba output
-        if getattr(model, "name", "") == "team":
-            pred = float(probs.mean())
+        try:
+            # Using the predictor class attribute
+            # pass the data to the `predict_proba` method
+            proba = self.predictor.predict_proba(df)
             
-        # Otherwise set `pred` to the first value
-        # of the predict_proba output
-        else:
-            pred = float(probs[0])
+            # Index the second column of predict_proba output
+            # The shape should be (<number of records>, 1)
+            probs = proba[:, 1]
+            
+            
+            # Below, create a `pred` variable set to
+            # the number we want to visualize
+            #
+            # If the model's name attribute is "team"
+            # We want to visualize the mean of the predict_proba output
+            if getattr(model, "name", "") == "team":
+                pred = float(probs.mean())
+                
+            # Otherwise set `pred` to the first value
+            # of the predict_proba output
+            else:
+                pred = float(probs[0])
+        except Exception:
+            fig, ax = plt.subplots(figsize=(8, 2.5))
+            ax.text(0.5, 0.5, 'Unable to calculate prediction', 
+                   transform=ax.transAxes, ha='center', va='center', 
+                   fontsize=14, color='white')
+            ax.set_facecolor('#16213e')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            return fig
         
         # Initialize a matplotlib subplot with smaller size
         fig, ax = plt.subplots(figsize=(8, 2.5))

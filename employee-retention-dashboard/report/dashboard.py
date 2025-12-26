@@ -1,4 +1,5 @@
 from fasthtml.common import *
+from starlette.staticfiles import StaticFiles
 import matplotlib.pyplot as plt
 
 # Import QueryBase, Employee, Team from employee_events
@@ -119,21 +120,48 @@ class LineChart(MatplotlibViz):
         pos_col = [c for c in df_cum.columns if "positive_events" in c][0]
         neg_col = [c for c in df_cum.columns if "negative_events" in c][0]
         df_cum = df_cum[[pos_col, neg_col]]
-        df_cum.columns = ["Positive", "Negative"]
+        df_cum.columns = ["Positive Events", "Negative Events"]
 
-        # Initialize a pandas subplot and assign the figure and axis to variables
-        fig, ax = plt.subplots()
+        # Initialize a pandas subplot with smaller figure size
+        fig, ax = plt.subplots(figsize=(8, 4))
 
-        # call the .plot method for the cumulative counts dataframe
-        df_cum.plot(ax=ax)
+        # Custom colors for better visibility
+        colors = ['#00d9ff', '#ff6b6b']  # Cyan for positive, coral for negative
+        
+        # Plot with custom styling
+        for i, col in enumerate(df_cum.columns):
+            ax.plot(df_cum.index, df_cum[col], color=colors[i], linewidth=2.5, 
+                   label=col, marker='', alpha=0.9)
+            
+            # Add end point annotation
+            last_val = df_cum[col].iloc[-1]
+            ax.annotate(f'{int(last_val)}', 
+                       xy=(df_cum.index[-1], last_val),
+                       xytext=(5, 0), textcoords='offset points',
+                       fontsize=11, fontweight='bold', color=colors[i])
 
-        # pass the axis variable to the `.set_axis_styling` method
+        # Apply axis styling
         self.set_axis_styling(ax)
 
-        # Set title and labels for x and y axis
-        ax.set_title("Cumulative Positive/Negative Events")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Cumulative Count")
+        # Set title and labels with improved styling
+        ax.set_title("Cumulative Events Over Time", fontsize=18, fontweight='bold', pad=20)
+        ax.set_xlabel("Date", fontsize=13, fontweight='bold', labelpad=12)
+        ax.set_ylabel("Cumulative Event Count", fontsize=13, fontweight='bold', labelpad=12)
+        
+        # Format x-axis to show fewer date labels
+        tick_positions = list(range(0, len(df_cum.index), max(1, len(df_cum.index) // 6)))
+        ax.set_xticks([df_cum.index[i] for i in tick_positions])
+        ax.set_xticklabels([df_cum.index[i] for i in tick_positions], rotation=45, ha='right')
+        
+        # Add grid for better readability
+        ax.grid(True, linestyle='--', alpha=0.4)
+        
+        # Improve legend - positioned in upper left with styled box
+        legend = ax.legend(loc='upper left', fontsize=11, framealpha=0.95)
+        legend.get_frame().set_linewidth(1.5)
+        
+        # Tight layout to prevent label cutoff
+        plt.tight_layout()
 
         return fig
 
@@ -187,18 +215,48 @@ class BarChart(MatplotlibViz):
         else:
             pred = float(probs[0])
         
-        # Initialize a matplotlib subplot
-        fig, ax = plt.subplots()
+        # Initialize a matplotlib subplot with smaller size
+        fig, ax = plt.subplots(figsize=(8, 2.5))
         
-        # Run the following code unchanged
-        ax.barh([''], [pred])
+        # Determine color based on risk level
+        if pred < 0.3:
+            bar_color = '#4CAF50'  # Green - Low risk
+            risk_level = 'Low Risk'
+        elif pred < 0.6:
+            bar_color = '#FF9800'  # Orange - Medium risk
+            risk_level = 'Medium Risk'
+        else:
+            bar_color = '#F44336'  # Red - High risk
+            risk_level = 'High Risk'
+        
+        # Create horizontal bar with custom styling
+        bars = ax.barh(['Recruitment Risk'], [pred], color=bar_color, height=0.5, edgecolor='white', linewidth=2)
+        
+        # Add percentage text on the bar
+        ax.text(pred + 0.02, 0, f'{pred*100:.1f}%', va='center', fontsize=14, fontweight='bold', color='white')
+        
+        # Add risk level indicator
+        ax.text(0.5, -0.4, f'Risk Level: {risk_level}', transform=ax.transAxes, 
+                ha='center', fontsize=11, color='white', style='italic')
+        
         ax.set_xlim(0, 1)
-        ax.set_title('Predicted Recruitment Risk', fontsize=20)
+        ax.set_title('Predicted Recruitment Risk', fontsize=16, fontweight='bold', pad=15, color='white')
+        
+        # Add x-axis labels as percentages
+        ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
+        ax.set_xticklabels(['0%', '25%', '50%', '75%', '100%'])
+        ax.set_xlabel('Probability', fontsize=12, labelpad=10)
+        
+        # Add vertical grid lines
+        ax.grid(True, axis='x', linestyle='--', alpha=0.3, color='white')
         
         # pass the axis variable
         # to the `.set_axis_styling`
         # method
         self.set_axis_styling(ax)
+        
+        # Tight layout
+        plt.tight_layout()
 
         return fig
 
@@ -263,8 +321,13 @@ class Report(CombinedComponent):
         NotesTable(),
     ]
 
-# Initialize a fasthtml app 
-app = FastHTML()
+# Initialize a fasthtml app with custom CSS
+from pathlib import Path
+css_path = Path(__file__).parent.parent / 'assets' / 'report.css'
+app = FastHTML(hdrs=[Link(rel='stylesheet', href='/static/report.css')])
+
+# Mount static files
+app.mount('/static', StaticFiles(directory=str(css_path.parent)), name='static')
 
 # Initialize the `Report` class
 report = Report()

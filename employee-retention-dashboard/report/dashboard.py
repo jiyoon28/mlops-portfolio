@@ -127,54 +127,73 @@ class LineChart(MatplotlibViz):
         cols = [c for c in df.columns if "positive_events" in c or "negative_events" in c]
         df_cum = df[cols].cumsum()
 
-        # Set the dataframe columns to the list ['Positive', 'Negative']
-        pos_col = [c for c in df_cum.columns if "positive_events" in c][0]
-        neg_col = [c for c in df_cum.columns if "negative_events" in c][0]
-        df_cum = df_cum[[pos_col, neg_col]]
-        df_cum.columns = ["Positive Events", "Negative Events"]
+        try:
+            # Set the dataframe columns to the list ['Positive', 'Negative']
+            pos_col = [c for c in df_cum.columns if "positive_events" in c][0]
+            neg_col = [c for c in df_cum.columns if "negative_events" in c][0]
+            df_cum = df_cum[[pos_col, neg_col]]
+            df_cum.columns = ["Positive Events", "Negative Events"]
 
-        # Initialize a pandas subplot with smaller figure size
-        fig, ax = plt.subplots(figsize=(8, 4))
+            # Check if dataframe is empty after processing
+            if df_cum.empty or len(df_cum.index) == 0:
+                raise ValueError("No data to display")
 
-        # Custom colors for better visibility
-        colors = ['#00d9ff', '#ff6b6b']  # Cyan for positive, coral for negative
-        
-        # Plot with custom styling
-        for i, col in enumerate(df_cum.columns):
-            ax.plot(df_cum.index, df_cum[col], color=colors[i], linewidth=2.5, 
-                   label=col, marker='', alpha=0.9)
+            # Initialize a pandas subplot with smaller figure size
+            fig, ax = plt.subplots(figsize=(8, 4))
+
+            # Custom colors for better visibility
+            colors = ['#00d9ff', '#ff6b6b']  # Cyan for positive, coral for negative
             
-            # Add end point annotation
-            last_val = df_cum[col].iloc[-1]
-            ax.annotate(f'{int(last_val)}', 
-                       xy=(df_cum.index[-1], last_val),
-                       xytext=(5, 0), textcoords='offset points',
-                       fontsize=11, fontweight='bold', color=colors[i])
+            # Plot with custom styling
+            for i, col in enumerate(df_cum.columns):
+                ax.plot(df_cum.index, df_cum[col], color=colors[i], linewidth=2.5, 
+                       label=col, marker='', alpha=0.9)
+                
+                # Add end point annotation (only if data exists)
+                if len(df_cum) > 0:
+                    last_val = df_cum[col].iloc[-1]
+                    ax.annotate(f'{int(last_val)}', 
+                               xy=(df_cum.index[-1], last_val),
+                               xytext=(5, 0), textcoords='offset points',
+                               fontsize=11, fontweight='bold', color=colors[i])
 
-        # Apply axis styling
-        self.set_axis_styling(ax)
+            # Apply axis styling
+            self.set_axis_styling(ax)
 
-        # Set title and labels with improved styling
-        ax.set_title("Cumulative Events Over Time", fontsize=18, fontweight='bold', pad=20)
-        ax.set_xlabel("Date", fontsize=13, fontweight='bold', labelpad=12)
-        ax.set_ylabel("Cumulative Event Count", fontsize=13, fontweight='bold', labelpad=12)
-        
-        # Format x-axis to show fewer date labels
-        tick_positions = list(range(0, len(df_cum.index), max(1, len(df_cum.index) // 6)))
-        ax.set_xticks([df_cum.index[i] for i in tick_positions])
-        ax.set_xticklabels([df_cum.index[i] for i in tick_positions], rotation=45, ha='right')
-        
-        # Add grid for better readability
-        ax.grid(True, linestyle='--', alpha=0.4)
-        
-        # Improve legend - positioned in upper left with styled box
-        legend = ax.legend(loc='upper left', fontsize=11, framealpha=0.95)
-        legend.get_frame().set_linewidth(1.5)
-        
-        # Tight layout to prevent label cutoff
-        plt.tight_layout()
+            # Set title and labels with improved styling
+            ax.set_title("Cumulative Events Over Time", fontsize=18, fontweight='bold', pad=20)
+            ax.set_xlabel("Date", fontsize=13, fontweight='bold', labelpad=12)
+            ax.set_ylabel("Cumulative Event Count", fontsize=13, fontweight='bold', labelpad=12)
+            
+            # Format x-axis to show fewer date labels
+            if len(df_cum.index) > 0:
+                tick_positions = list(range(0, len(df_cum.index), max(1, len(df_cum.index) // 6)))
+                ax.set_xticks([df_cum.index[i] for i in tick_positions])
+                ax.set_xticklabels([df_cum.index[i] for i in tick_positions], rotation=45, ha='right')
+            
+            # Add grid for better readability
+            ax.grid(True, linestyle='--', alpha=0.4)
+            
+            # Improve legend - positioned in upper left with styled box
+            legend = ax.legend(loc='upper left', fontsize=11, framealpha=0.95)
+            legend.get_frame().set_linewidth(1.5)
+            
+            # Tight layout to prevent label cutoff
+            plt.tight_layout()
 
-        return fig
+            return fig
+            
+        except Exception:
+            # Return error figure if any exception occurs
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.text(0.5, 0.5, 'No data available for this selection', 
+                   transform=ax.transAxes, ha='center', va='center', 
+                   fontsize=14, color='white')
+            ax.set_facecolor('#16213e')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            plt.tight_layout()
+            return fig
 
 
 class BarChart(MatplotlibViz):
@@ -385,12 +404,22 @@ def index():
 # to a string datatype
 @app.get('/employee/{emp_id}')
 def employee(emp_id: str):
-
+    from fasthtml.common import RedirectResponse
+    
+    # Validate employee ID exists (1-25)
+    try:
+        emp_id_int = int(emp_id)
+        valid_ids = [e[1] for e in Employee().names()]
+        if emp_id_int not in valid_ids:
+            return RedirectResponse("/", status_code=303)
+    except ValueError:
+        return RedirectResponse("/", status_code=303)
+    
     # Call the initialized report
     # pass the ID and an instance
     # of the Employee SQL class as arguments
     # Return the result
-    return report(int(emp_id), Employee())
+    return report(emp_id_int, Employee())
 
 # Create a route for a get request
 # Set the route's path to receive a request
@@ -401,12 +430,22 @@ def employee(emp_id: str):
 # to a string datatype
 @app.get('/team/{team_id}')
 def team(team_id: str):
-
+    from fasthtml.common import RedirectResponse
+    
+    # Validate team ID exists (1-5)
+    try:
+        team_id_int = int(team_id)
+        valid_ids = [t[1] for t in Team().names()]
+        if team_id_int not in valid_ids:
+            return RedirectResponse("/", status_code=303)
+    except ValueError:
+        return RedirectResponse("/", status_code=303)
+    
     # Call the initialized report
     # pass the id and an instance
     # of the Team SQL class as arguments
     # Return the result
-    return report(int(team_id), Team())
+    return report(team_id_int, Team())
 
 
 # Keep the below code unchanged!

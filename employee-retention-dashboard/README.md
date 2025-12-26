@@ -2,8 +2,17 @@
 
 A production-ready data dashboard application designed for manufacturing companies to monitor employee performance metrics and predict recruitment risk using machine learning. This project demonstrates end-to-end MLOps practices including modular Python package development, interactive web dashboards, SQL-based data layers, and automated testing with CI/CD integration.
 
+## Live Demo
+
+**[View Live Demo](https://mlops-portfolio.onrender.com)**
+
+> Note: The app may take 30-60 seconds to load initially as it wakes from sleep mode (free tier).
+
+![Dashboard Screenshot](assets/dashboard-screenshot.png)
+
 ## Table of Contents
 
+- [Live Demo](#live-demo)
 - [Project Overview](#project-overview)
 - [Key Features](#key-features)
 - [Technical Architecture](#technical-architecture)
